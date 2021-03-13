@@ -3,12 +3,12 @@
 #include <time.h>
 #include "Connector.hpp"
 
-#define Z 2
+#define SIZE 800
 
 using namespace sf;
 
-int size = Z * 56; // size of a square in image file
-Vector2f offset(Z * 28, Z * 28); // Starts pieces away from the edges
+int size = 442; // size of a square in image file
+Vector2f offset(32, 32); // starts pieces away from the edges
 
 Sprite f[32]; // figures, first 16 black, last 16 white
 std::string position = ""; // record of all moves
@@ -32,8 +32,8 @@ std::map<int, int> promotedPawns; // keeps track of promoted pawns and their new
 std::string toChessNote(Vector2f p) // Converts position of move to chess notation
 {
 	std::string s = "";
-	s += char(p.x / size + 97);
-	s += char(7 - p.y / size + 49);
+	s += char(p.x / ((SIZE - 2 * offset.x) / 8.f) + 97);
+	s += char(7 - p.y / ((SIZE - 2 * offset.x) / 8.f) + 49);
 	return s;
 }
 
@@ -41,7 +41,7 @@ Vector2f toCoord(char a, char b) // Converts chess notation to positional coordi
 {
 	int x = int(a) - 97;
 	int y = 7 - int(b) + 49;
-	return Vector2f(float(x * size), float(y * size));
+	return Vector2f(x * ((SIZE - 2 * offset.x) / 8.f), y * ((SIZE - 2 * offset.x) / 8.f));
 }
 
 void move(std::string str) // used mainly for loadPosition, executes a single move (including captures)
@@ -51,7 +51,7 @@ void move(std::string str) // used mainly for loadPosition, executes a single mo
 
 	for (int i = 0; i < 32; i++) {
 		if (f[i].getPosition() == newPos) {
-			f[i].setPosition(Z * -100, Z * -100); // taken pieces pile
+			f[i].setPosition(-SIZE, -SIZE); // taken pieces pile
 		}
 	}
 
@@ -74,12 +74,12 @@ void loadPosition() // used if changes are made in 'position' and board state ne
 			int y = (n > 0);
 			std::map<int, int>::iterator it = promotedPawns.find(k);
 			if (it != promotedPawns.end()) { // sets crop in figures.png to match promoted piece
-				f[k].setTextureRect(IntRect((size / Z) * (it->second - 1), (size / Z) * y, size / Z, size / Z));
+				f[k].setTextureRect(IntRect((f[k].getTexture()->getSize().x / 6.f) * (it->second - 1), (f[k].getTexture()->getSize().y / 2.f) * y, f[k].getTexture()->getSize().x / 6.f, f[k].getTexture()->getSize().y / 2.f));
 			}
 			else { // sets crop in figures.png to match piece
-				f[k].setTextureRect(IntRect((size / Z) * x, (size / Z) * y, size / Z, size / Z));
+				f[k].setTextureRect(IntRect((f[k].getTexture()->getSize().x / 6.f) * x, (f[k].getTexture()->getSize().y / 2.f) * y, f[k].getTexture()->getSize().x / 6.f, f[k].getTexture()->getSize().y / 2.f));
 			}
-			f[k].setPosition(float(size * j), float(size * i));
+			f[k].setPosition(((SIZE - 2 * offset.x) / 8.f) * j, ((SIZE - 2 * offset.x) / 8.f) * i);
 			k++;
 		}
 
@@ -93,7 +93,7 @@ void loadPosition() // used if changes are made in 'position' and board state ne
 		move(position.substr(i, 4));
 		std::map<int, int>::iterator it = enPassantPos.find(i);
 		if (it != enPassantPos.end()) {
-			f[it->second].setPosition(Z * -100, Z * -100); // taken pieces pile
+			f[it->second].setPosition(-SIZE, -SIZE); // taken pieces pile
 		}
 	}
 }
@@ -115,7 +115,7 @@ void promotion(int piece, int p) {
 	}
 
 	promotedPawns.insert(std::pair<int, int>(piece, p));
-	f[piece].setTextureRect(IntRect(size * (p - 1), size * color, size, size));
+	f[piece].setTextureRect(IntRect(((SIZE - 2 * offset.x) / 8.f) * (p - 1), ((SIZE - 2 * offset.x) / 8.f) * color, ((SIZE - 2 * offset.x) / 8.f), ((SIZE - 2 * offset.x) / 8.f)));
 }
 
 bool checkCol(Vector2f pos, bool color) { // checks if pieces of certain color occupy a given square
@@ -438,7 +438,7 @@ std::string validMove(std::string str, int piece) { // checks if a move follows 
 			}
 			if (enPassant == true) {
 				enPassantPos.insert(std::pair<int, int>(position.length(), n));
-				f[n].setPosition(Z * -100, Z * -100);
+				f[n].setPosition(-SIZE, -SIZE);
 			}
 		}
 		else {
@@ -452,7 +452,7 @@ std::string validMove(std::string str, int piece) { // checks if a move follows 
 	int j;
 	for (j = !color * 16; j < !color * 16 + 16; j++) {
 		if (f[j].getPosition() == newPos) {
-			f[j].setPosition(Z * -100, Z * -100);
+			f[j].setPosition(-SIZE, -SIZE);
 			break;
 		}
 	}
@@ -498,17 +498,20 @@ int main()
 	ConnectToEngine(enginePath);
 
 	Texture t1, t2;
-	t1.loadFromFile("../images/figures0.png");
-	t2.loadFromFile("../images/board0.png");
+	t1.loadFromFile("../images/figures.png");
+	t2.loadFromFile("../images/board.png");
+
+	offset.x *= SIZE / float(t2.getSize().x);
+	offset.y *= SIZE / float(t2.getSize().y);
 
 	for (int i = 0; i < 32; i++) {
 		f[i].setTexture(t1);
-		f[i].setScale(float(Z), float(Z));
+		f[i].setScale(((SIZE - 2 * offset.x) / 8.f) / (t1.getSize().x / 6.f), ((SIZE - 2 * offset.y) / 8.f) / (t1.getSize().y / 2.f));
 	}
 	Sprite sBoard(t2);
-	sBoard.setScale(float(Z), float(Z));
+	sBoard.setScale(SIZE / float(t2.getSize().x), SIZE / float(t2.getSize().y));
 
-	RenderWindow window(VideoMode(unsigned int(sBoard.getGlobalBounds().width), unsigned int(sBoard.getGlobalBounds().height)), "Chess");
+	RenderWindow window(VideoMode(SIZE, SIZE), "Chess");
 
 	loadPosition();
 
@@ -548,7 +551,7 @@ int main()
 						if (lastPieceMoved >= 8 && lastPieceMoved < 24 && lastMove[1] - '0' == color * 5 + 2 && lastMove[3] - '0' == color * 7 + 1) {
 							std::map<int, int>::iterator it = promotedPawns.find(lastPieceMoved);
 							promotedPawns.erase(it);
-							f[lastPieceMoved].setTextureRect(IntRect(5 * size, color * size, size, size));
+							f[lastPieceMoved].setTextureRect(IntRect(5 * ((SIZE - 2 * offset.x) / 8.f), color * ((SIZE - 2 * offset.x) / 8.f), ((SIZE - 2 * offset.x) / 8.f), ((SIZE - 2 * offset.x) / 8.f)));
 						}
 
 						if (position.length() < 6)
@@ -615,8 +618,8 @@ int main()
 			if (e.type == Event::MouseButtonReleased && e.key.code == Mouse::Left && holdingPiece)
 			{
 				isMove = false;
-				Vector2f p = f[n].getPosition() + Vector2f(float(size / 2), float(size / 2));
-				newPos = Vector2f(float(size * int(p.x / size)), float(size * int(p.y / size)));
+				Vector2f p = f[n].getPosition() + Vector2f(((SIZE - 2 * offset.x) / 8.f) / 2, ((SIZE - 2 * offset.x) / 8.f) / 2);
+				newPos = Vector2f(((SIZE - 2 * offset.x) / 8.f) * int(p.x / ((SIZE - 2 * offset.x) / 8.f)), ((SIZE - 2 * offset.x) / 8.f) * int(p.y / ((SIZE - 2 * offset.x) / 8.f)));
 
 				str = toChessNote(oldPos) + toChessNote(newPos);
 
