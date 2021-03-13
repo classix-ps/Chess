@@ -3,12 +3,12 @@
 #include <time.h>
 #include "Connector.hpp"
 
-#define SIZE 800
+#define SIZE 680
 
 using namespace sf;
 
-int size = 442; // size of a square in image file
-Vector2f offset(32, 32); // starts pieces away from the edges
+int size = 80; // size of a square in image file
+Vector2f offset(20, 20); // starts pieces away from the edges
 
 Sprite f[32]; // figures, first 16 black, last 16 white
 std::string position = ""; // record of all moves
@@ -498,8 +498,10 @@ int main()
 	ConnectToEngine(enginePath);
 
 	Texture t1, t2;
-	t1.loadFromFile("../images/figures.png");
-	t2.loadFromFile("../images/board.png");
+	t1.loadFromFile("../images/figuresWood.png");
+	t2.loadFromFile("../images/boardWood.png");
+	//t1.loadFromFile("../images/figuresStone.png");
+	//t2.loadFromFile("../images/boardStone.png");
 
 	offset.x *= SIZE / float(t2.getSize().x);
 	offset.y *= SIZE / float(t2.getSize().y);
